@@ -8,10 +8,6 @@ import cv2.utils.logging
 import numpy
 
 
-# module level logger
-logger: logging.Logger = logging.getLogger('cameras')
-
-
 @dataclasses.dataclass(frozen=True)
 class CameraInfo:
     """description of a single web camera detected in the system"""
@@ -122,10 +118,10 @@ class Cameras:
             default_fps: float = float(capture.get(cv2.CAP_PROP_FPS))
 
             # discover the maximum resolution the driver is willing to negotiate
-            max_width, max_height = cls.probe_max_resolution(capture)
+            max_width, max_height = cls._probe_max_resolution(capture)
 
             # device name
-            name = cls.read_device_name(index)
+            name = cls._read_device_name(index)
 
             camera: CameraInfo = CameraInfo(
                 index=index,
@@ -143,7 +139,7 @@ class Cameras:
             capture.release()
 
     @classmethod
-    def probe_max_resolution(cls, capture: cv2.VideoCapture) -> tuple[int, int]:
+    def _probe_max_resolution(cls, capture: cv2.VideoCapture) -> tuple[int, int]:
         """
         request an oversized resolution so the driver clamps it to the nearest supported mode.
 
@@ -161,7 +157,7 @@ class Cameras:
         return max_width, max_height
 
     @classmethod
-    def read_device_name(cls, index: int) -> str:
+    def _read_device_name(cls, index: int) -> str:
         """
         read the human-readable device name of a video4linux camera from sysfs on Linux.
 
@@ -194,6 +190,9 @@ class Camera:
         height: int = DEFAULT_CAPTURE_HEIGHT,
         mirror: bool = True,
     ) -> None:
+        # module level logger
+        self.logger: logging.Logger = logging.getLogger(self.__class__.__name__)
+
         self.index: int = index
 
         self.width: int = width
@@ -228,7 +227,7 @@ class Camera:
         actual_width: int = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
         actual_height: int = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-        logger.debug(
+        self.logger.debug(
             'capturing from web camera #%d at %dx%d (requested %dx%d)',
             self.index,
             actual_width,
@@ -244,7 +243,7 @@ class Camera:
 
                 if not success:
                     # the camera failed to deliver a frame, stop the loop
-                    logger.warning('failed to read a frame from web camera #%d', self.index)
+                    self.logger.warning('failed to read a frame from web camera #%d', self.index)
                     break
 
                 # mirror the raw frame before yielding so detection and label drawing happen on the
