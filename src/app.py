@@ -3,6 +3,8 @@ import pathlib
 import logging
 import logging.config
 import typing as t
+
+import numpy as np
 import yaml
 import sys
 import json
@@ -93,8 +95,10 @@ class Application:
         detector: lib.detector.Detector = lib.detector.Detector(model_dir=self.PATH_DIR_WORK)
 
         # build the pipeline: capture frames -> annotate with detections -> show in the window
-        frames: t.Iterator = lib.cameras.Cameras.capture(camera)
-        annotated = (detector.annotate(frame) for frame in frames)
+        capturer: lib.cameras.Camera = lib.cameras.Camera(camera)
+
+        frames: t.Iterator[np.ndarray] = capturer.capture()
+        annotated: t.Iterator[np.ndarray] = (detector.annotate(frame) for frame in frames)
 
         lib.viewer.Viewer().show(annotated)
 
@@ -112,8 +116,10 @@ class Application:
         estimator: lib.depth.DepthEstimator = lib.depth.DepthEstimator(model_dir=self.PATH_DIR_WORK)
 
         # build the pipeline: capture frames -> estimate depth -> show in the window
-        frames: t.Iterator = lib.cameras.Cameras.capture(camera)
-        annotated = (estimator.annotate(frame) for frame in frames)
+        capturer: lib.cameras.Camera = lib.cameras.Camera(camera)
+
+        frames: t.Iterator[np.ndarray] = capturer.capture()
+        annotated: t.Iterator[np.ndarray] = (estimator.annotate(frame) for frame in frames)
 
         lib.viewer.Viewer().show(annotated)
 
@@ -133,8 +139,10 @@ class Application:
         )
 
         # build the pipeline: capture frames -> segment with masks -> show in the window
-        frames: t.Iterator = lib.cameras.Cameras.capture(camera)
-        annotated = (segmenter.annotate(frame) for frame in frames)
+        capturer: lib.cameras.Camera = lib.cameras.Camera(camera)
+
+        frames: t.Iterator[np.ndarray] = capturer.capture()
+        annotated: t.Iterator[np.ndarray] = (segmenter.annotate(frame) for frame in frames)
 
         lib.viewer.Viewer().show(annotated)
 
@@ -144,7 +152,14 @@ class Application:
 
         :return: nothing, the discovered cameras are written to the log
         """
-        lib.cameras.Cameras.report()
+        found_cameras: list[lib.cameras.CameraInfo] = lib.cameras.Cameras.detect()
+
+        if found_cameras:
+            self.logger.info('detected %d web camera(s):', len(found_cameras))
+            for camera in found_cameras:
+                self.logger.info('%s', camera)
+        else:
+            self.logger.info('no web cameras were detected')
 
     @staticmethod
     def load_yaml(path: pathlib.Path, yaml_loader_class: t.Type) -> t.Dict:

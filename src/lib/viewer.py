@@ -25,9 +25,8 @@ class Viewer:
     # how long `cv2.waitKey` waits for a key press between frames, in milliseconds
     WAIT_KEY_DELAY_MS: t.Final[int] = 1
 
-    # key codes that stop the viewer; ESC and the letter 'q'
+    # ESC code that stop the viewer
     KEY_ESCAPE: t.Final[int] = 27
-    KEY_QUIT: t.Final[int] = ord('q')
 
     def __init__(self):
         """
@@ -44,7 +43,7 @@ class Viewer:
         :param frames: an iterable producing BGR frames as numpy arrays
         :return: nothing, the frames are drawn to the window
         """
-        logger.info('showing camera window, press [q] or [ESC] or close the window to quit')
+        logger.info('showing camera window, press [ESC] or close the window to quit')
 
         try:
             for frame in frames:
@@ -53,7 +52,7 @@ class Viewer:
 
                 # pump the GUI event loop and check whether the user asked to quit
                 key: int = cv2.waitKey(self.WAIT_KEY_DELAY_MS) & 0xFF
-                if key in (self.KEY_QUIT, self.KEY_ESCAPE):
+                if key == self.KEY_ESCAPE:
                     logger.info('window closed by the user via keyboard')
                     break
 
@@ -90,7 +89,7 @@ class Viewer:
 
         :return: nothing
         """
-        
+
         # the window may already be gone (the user clicked the close button), in which case
         # cv2.destroyWindow raises; only destroy it while it is still open
         if not self.is_window_open():
