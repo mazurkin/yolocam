@@ -251,6 +251,8 @@ class Camera:
                 if self.mirror:
                     frame = cv2.flip(frame, self.FLIP_HORIZONTAL)
 
+                # by design the yielded frame is in BGR channel order: this is the OpenCV default
+                # for `VideoCapture.read()` and it is exactly what the downstream YOLO models expect
                 yield frame
         finally:
             # always release the device handle

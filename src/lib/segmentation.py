@@ -9,10 +9,6 @@ import ultralytics
 import ultralytics.engine.results
 
 
-# module level logger
-logger: logging.Logger = logging.getLogger('segmentation')
-
-
 class InstanceSegmentation:
     """
     thin wrapper around the ultralytics YOLO26 segmentation model that runs instance segmentation
@@ -42,18 +38,22 @@ class InstanceSegmentation:
         :param model: file name of the YOLO segmentation weights (downloaded automatically if missing)
         :param device: torch device to run on ('cuda', 'cpu', ...); auto-detected when omitted
         """
+
+        # module level logger
+        self.logger: logging.Logger = logging.getLogger('segmentation')
+
         # pick the best available device unless the caller forces a specific one
         self.device: t.Final[str] = device if device is not None else self.select_device()
 
         # report the resolved device so it is always obvious whether inference runs on GPU or CPU
         if torch.cuda.is_available():
-            logger.info(
+            self.logger.info(
                 'CUDA is available, using GPU device [%s]: %s',
                 self.device,
                 torch.cuda.get_device_name(0),
             )
         else:
-            logger.warning('CUDA is not available, falling back to CPU device [%s]', self.device)
+            self.logger.warning('CUDA is not available, falling back to CPU device [%s]', self.device)
 
         # make sure the target directory exists so ultralytics can download the weights into it
         model_dir.mkdir(parents=True, exist_ok=True)
@@ -62,7 +62,7 @@ class InstanceSegmentation:
         # path when the file does not exist yet, keeping it out of the current working directory
         model_path: pathlib.Path = model_dir / model
 
-        logger.info('loading YOLO segmentation model [%s] on device [%s]', model_path, self.device)
+        self.logger.info('loading YOLO segmentation model [%s] on device [%s]', model_path, self.device)
 
         # load the ultralytics YOLO model and move it to the target device
         self.model: t.Final[ultralytics.YOLO] = ultralytics.YOLO(model_path)
@@ -70,7 +70,7 @@ class InstanceSegmentation:
 
         # confirm where the model weights physically reside after moving them to the device
         weights_device: torch.device = next(self.model.model.parameters()).device
-        logger.info('YOLO segmentation model weights loaded on device [%s]', weights_device)
+        self.logger.info('YOLO segmentation model weights loaded on device [%s]', weights_device)
 
     @staticmethod
     def select_device() -> str:
