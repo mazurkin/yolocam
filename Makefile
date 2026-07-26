@@ -6,6 +6,7 @@ export PYTHONDONTWRITEBYTECODE = 1
 export PYTHONUNBUFFERED        = 1
 export PYTHONPATH              = $(ROOT)/src
 export PYTHONOPTIMIZE          = 0
+
 export OMP_NUM_THREADS         = 1
 export CUDA_VISIBLE_DEVICES    = 0
 
@@ -15,11 +16,13 @@ export POETRY_REQUESTS_TIMEOUT = 300
 export HF_HUB_ETAG_TIMEOUT     = 300
 export HF_DATASETS_OFFLINE     = 0
 
-RSYNC               = rsync --archive --verbose --compress --rsh='ssh -o ClearAllForwardings=yes'
-REMOTE_HOST         = pp-yolocam
-REMOTE_PATH         = projects/yolocam
+RSYNC                          = rsync --archive --verbose --compress --rsh='ssh -o ClearAllForwardings=yes'
+REMOTE_HOST                    = pp-yolocam
+REMOTE_PATH                    = projects/yolocam
 
-CONDA_ENV_NAME      = yolocam
+CAMERA_INDEX                   = 4
+
+CONDA_ENV_NAME                 = yolocam
 
 # -----------------------------------------------------------------------------
 # default
@@ -127,15 +130,15 @@ cameras:
 
 .PHONY: detect
 detect:
-	@bin/run python3 src/app.py detect --camera 4
+	@bin/run python3 src/app.py detect --camera $(CAMERA_INDEX)
 
 .PHONY: depth
 depth:
-	@bin/run python3 src/app.py depth --camera 4
+	@bin/run python3 src/app.py depth --camera $(CAMERA_INDEX)
 
 .PHONY: segmentation
 segmentation:
-	@bin/run python3 src/app.py segmentation --camera 4
+	@bin/run python3 src/app.py segmentation --camera $(CAMERA_INDEX)
 
 # -----------------------------------------------------------------------------
 # system
